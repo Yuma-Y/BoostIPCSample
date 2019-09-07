@@ -1,0 +1,10 @@
+﻿################################################################################
+# この .gitignore ファイルは Microsoft(R) Visual Studio によって自動的に作成されました。
+################################################################################
+
+/x64/Debug
+/.vs/BoostIPCSample/v16
+/BoostIPCReceive/Debug
+/BoostIPCReceive/x64/Debug
+/BoostIPCSend/Debug
+/BoostIPCSend/x64/Debug
