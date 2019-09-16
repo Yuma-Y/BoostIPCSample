@@ -15,15 +15,20 @@ static const std::string shared_dir_path = argv_path.substr(0, argv_path.find_la
 #include <boost/interprocess/exceptions.hpp>
 #include <boost/filesystem.hpp>
 
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
+
 using namespace std;
 using namespace boost::interprocess;
 
-BoostSharedMemReceive::BoostSharedMemReceive() : shm(nullptr)
+BoostSharedMemReceive::BoostSharedMemReceive() : class_name("")
 {
+	mutex = new interprocess_mutex;
 }
 
 BoostSharedMemReceive::~BoostSharedMemReceive()
 {
+	delete mutex;
+	mutex = nullptr;
 }
 
 bool BoostSharedMemReceive::create()
@@ -41,6 +46,8 @@ string BoostSharedMemReceive::receive()
 	string ret;
 
 	try {
+		mutex->lock();
+
 		shared_memory_object shm(open_only, "MY_SHARED_MEMORY", read_write);
 
 		mapped_region region(shm, read_write);
@@ -53,6 +60,8 @@ string BoostSharedMemReceive::receive()
 
 		// “Ç‚ñ‚¾Œãƒƒ‚ƒŠ‚Ì“à—e‚ðƒNƒŠƒA‚·‚é
 		std::memset(region.get_address(), 0, region.get_size());
+
+		mutex->unlock();
 	}
 	catch (interprocess_exception& e) {
 		cout << e.get_error_code() << "," << e.what() << endl;

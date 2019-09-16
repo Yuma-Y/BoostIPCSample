@@ -13,17 +13,22 @@ static const std::string shared_dir_path = argv_path.substr(0, argv_path.find_la
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/exceptions.hpp>
 
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
+
 using namespace std;
 using namespace boost::interprocess;
 
 BoostSharedMemSend::BoostSharedMemSend() : shm(nullptr)
 {
+	mutex = new interprocess_mutex;
 }
 
 BoostSharedMemSend::~BoostSharedMemSend()
 {
 	delete shm;
 	shm = nullptr;
+	delete mutex;
+	mutex = nullptr;
 }
 
 bool BoostSharedMemSend::create()
@@ -56,6 +61,8 @@ bool BoostSharedMemSend::send(string message)
 	bool ret = false;
 
 	try {
+		mutex->lock();
+
 		// mapped_regionでshared_memory_objectを自プロセスにマッピングし、
 		// このように直接読み書きできるようになる
 		mapped_region region(*shm, read_write);
@@ -63,6 +70,11 @@ bool BoostSharedMemSend::send(string message)
 		for (std::size_t i = 0; i < message.length(); ++i, ++mem) {
 			*mem = message[i];
 		}
+
+		// mutexの場合、unlock()し忘れるとlock()以降のセクションにアクセスできなくなる
+		// ちなみに、scoped_lockを使えばmutexをメンバ変数にしなくても
+		// ローカル変数のスコープの間だけロックし、スコープを抜けると自動でアンロックしてくれる。
+		mutex->unlock();
 		
 		ret = true;
 	}

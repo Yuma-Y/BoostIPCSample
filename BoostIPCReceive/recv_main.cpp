@@ -10,10 +10,11 @@ using namespace std;
 int main()
 {
 	IPC_IF* reciever = nullptr;
-	// reciever = new BoostSharedMemReceive;
-	reciever = new BoostManagedSharedMemReceive;
+	reciever = new BoostSharedMemReceive;
+	// reciever = new BoostManagedSharedMemReceive;
 
 	cout << "=== Receiver Process ===" << endl;
+	// cout << "=== IPC class : " << reciever->class_name << "===" << endl;
 
 	// Sendから送られてきたメッセージを表示する
 	while (true) {

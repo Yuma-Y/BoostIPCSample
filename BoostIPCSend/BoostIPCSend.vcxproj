@@ -164,7 +164,7 @@
   <ItemGroup>
     <ClCompile Include="BoostManagedSharedMemSend.cpp" />
     <ClCompile Include="BoostSharedMemSend.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="send_main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BoostManagedSharedMemSend.hpp" />

@@ -158,7 +158,7 @@
   <ItemGroup>
     <ClCompile Include="BoostManagedSharedMemReceive.cpp" />
     <ClCompile Include="BoostSharedMemReceive.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="recv_main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BoostManagedSharedMemReceive.hpp" />

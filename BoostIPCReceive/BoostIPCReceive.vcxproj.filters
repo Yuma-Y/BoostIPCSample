@@ -18,10 +18,10 @@
     <ClCompile Include="BoostSharedMemReceive.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="BoostManagedSharedMemReceive.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="BoostManagedSharedMemReceive.cpp">
+    <ClCompile Include="recv_main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

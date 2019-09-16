@@ -5,6 +5,7 @@
 namespace boost {
 	namespace interprocess {
 		class shared_memory_object;
+		class interprocess_mutex;
 	}
 }
 
@@ -23,5 +24,6 @@ public:
 
 private:
 	boost::interprocess::shared_memory_object* shm;
+	boost::interprocess::interprocess_mutex* mutex;
 };
 
