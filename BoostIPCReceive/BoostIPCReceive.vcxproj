@@ -156,10 +156,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BoostManagedSharedMemReceive.cpp" />
     <ClCompile Include="BoostSharedMemReceive.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BoostManagedSharedMemReceive.hpp" />
     <ClInclude Include="BoostSharedMemReceive.hpp" />
     <ClInclude Include="IPC_IF.hpp" />
   </ItemGroup>

@@ -162,10 +162,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BoostManagedSharedMemSend.cpp" />
     <ClCompile Include="BoostSharedMemSend.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BoostManagedSharedMemSend.hpp" />
     <ClInclude Include="BoostSharedMemSend.hpp" />
     <ClInclude Include="IPC_IF.hpp" />
   </ItemGroup>

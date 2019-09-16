@@ -22,6 +22,8 @@ BoostSharedMemSend::BoostSharedMemSend() : shm(nullptr)
 
 BoostSharedMemSend::~BoostSharedMemSend()
 {
+	delete shm;
+	shm = nullptr;
 }
 
 bool BoostSharedMemSend::create()
@@ -35,7 +37,15 @@ bool BoostSharedMemSend::create()
 		ret = true;
 	}
 	catch (interprocess_exception& e) {
-		cout << e.get_error_code() << "," << e.what() << endl;
+		// already_exists_error(=共有メモリがすでにある)だったらいったん削除して再度create()する
+		// (open_or_create指定してるからすでにあってもよさそうなのになぜかexceptionになるので)
+		if (e.get_error_code() == already_exists_error) {
+			destroy();
+			create();
+		}
+		else {
+			cout << e.get_error_code() << "," << e.what() << endl;
+		}
 	}
 
 	return ret;
@@ -46,6 +56,8 @@ bool BoostSharedMemSend::send(string message)
 	bool ret = false;
 
 	try {
+		// mapped_regionでshared_memory_objectを自プロセスにマッピングし、
+		// このように直接読み書きできるようになる
 		mapped_region region(*shm, read_write);
 		char* mem = static_cast<char*>(region.get_address());
 		for (std::size_t i = 0; i < message.length(); ++i, ++mem) {

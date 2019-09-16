@@ -3,14 +3,17 @@
 #include <Windows.h>
 
 #include "BoostSharedMemReceive.hpp"
+#include "BoostManagedSharedMemReceive.hpp"
 
 using namespace std;
 
 int main()
 {
 	IPC_IF* reciever = nullptr;
-	reciever = new BoostSharedMemReceive;
-	cout << "=== Reciver Process ===" << endl;
+	// reciever = new BoostSharedMemReceive;
+	reciever = new BoostManagedSharedMemReceive;
+
+	cout << "=== Receiver Process ===" << endl;
 
 	// Sendから送られてきたメッセージを表示する
 	while (true) {
