@@ -20,7 +20,7 @@ static const std::string shared_dir_path = argv_path.substr(0, argv_path.find_la
 using namespace std;
 using namespace boost::interprocess;
 
-BoostSharedMemReceive::BoostSharedMemReceive() : class_name("")
+BoostSharedMemReceive::BoostSharedMemReceive()
 {
 	mutex = new interprocess_mutex;
 }
@@ -100,4 +100,9 @@ bool BoostSharedMemReceive::hasNewMessage()
 	}
 
 	return ret;
+}
+
+string BoostSharedMemReceive::getClassName()
+{
+	return string("BoostSharedMemReceive");
 }

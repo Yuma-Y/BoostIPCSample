@@ -15,4 +15,6 @@ public:
 	virtual bool destroy() = 0;	// 破棄
 
 	virtual bool hasNewMessage() = 0; // メッセージあり？
+
+	virtual string getClassName() = 0;
 };

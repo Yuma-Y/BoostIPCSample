@@ -20,6 +20,8 @@ public:
 
 	bool hasNewMessage();
 
+	string getClassName();
+
 private:
 	boost::interprocess::interprocess_mutex* mutex;
 };

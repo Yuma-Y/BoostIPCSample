@@ -17,6 +17,7 @@ int main()
 	// 共有メモリなど、送信機構の作成は送信側が行うこととする
 	if (sender->create()) {
 		cout << "=== Sender Process ===" << endl;
+		cout << "=== IPC class : " << sender->getClassName() << "===" << endl;
 
 		// 標準入力から入った文言を送る。q/Q/quitで終了。
 		string message;

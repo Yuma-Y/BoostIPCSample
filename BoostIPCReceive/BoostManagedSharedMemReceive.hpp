@@ -14,5 +14,7 @@ public:
 	bool destroy();				// ”jŠü
 
 	bool hasNewMessage();
+
+	string getClassName();
 };
 

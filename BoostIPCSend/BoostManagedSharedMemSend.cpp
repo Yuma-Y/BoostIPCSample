@@ -91,3 +91,8 @@ bool BoostManagedSharedMemSend::hasNewMessage()
 {
 	return false;
 }
+
+string BoostManagedSharedMemSend::getClassName()
+{
+	return string("BoostManagedSharedMemSend");
+}

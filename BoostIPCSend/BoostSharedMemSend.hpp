@@ -22,6 +22,8 @@ public:
 
 	bool hasNewMessage();
 
+	string getClassName();
+
 private:
 	boost::interprocess::shared_memory_object* shm;
 	boost::interprocess::interprocess_mutex* mutex;

@@ -25,6 +25,8 @@ public:
 
 	bool hasNewMessage();
 
+	string getClassName();
+
 private:
 	boost::interprocess::managed_shared_memory* shm;
 };

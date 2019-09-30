@@ -9,25 +9,25 @@ using namespace std;
 
 int main()
 {
-	IPC_IF* reciever = nullptr;
-	reciever = new BoostSharedMemReceive;
-	// reciever = new BoostManagedSharedMemReceive;
+	IPC_IF* receiver = nullptr;
+	receiver = new BoostSharedMemReceive;
+	// receiver = new BoostManagedSharedMemReceive;
 
 	cout << "=== Receiver Process ===" << endl;
-	// cout << "=== IPC class : " << reciever->class_name << "===" << endl;
+	cout << "=== IPC class : " << receiver->getClassName() << "===" << endl;
 
 	// Sendから送られてきたメッセージを表示する
 	while (true) {
 		string message;
-		if (reciever->hasNewMessage()) {
-			message = reciever->receive();
+		if (receiver->hasNewMessage()) {
+			message = receiver->receive();
 			cout << "<--- Message from Sender: " << message << endl;
 		}
 
 		Sleep(100);
 	}
 
-	reciever->destroy();
-	delete reciever;
+	receiver->destroy();
+	delete receiver;
 }
 

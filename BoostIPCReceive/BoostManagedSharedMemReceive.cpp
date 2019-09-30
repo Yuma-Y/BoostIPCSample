@@ -92,3 +92,8 @@ bool BoostManagedSharedMemReceive::hasNewMessage()
 
 	return ret;
 }
+
+string BoostManagedSharedMemReceive::getClassName()
+{
+	return string("BoostManagedSharedMemReceive");
+}

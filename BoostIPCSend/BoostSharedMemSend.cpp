@@ -101,3 +101,8 @@ bool BoostSharedMemSend::hasNewMessage()
 	// ‘—Mê—p‚È‚Ì‚Å‹ó‚Å‚¢‚¢
 	return false;
 }
+
+string BoostSharedMemSend::getClassName()
+{
+	return string("BoostSharedMemSend");
+}
