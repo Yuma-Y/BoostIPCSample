@@ -5,18 +5,22 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/exceptions.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
 
 using namespace std;
 using namespace boost::interprocess;
 
-BoostManagedSharedMemSend::BoostManagedSharedMemSend() : shm(nullptr)
+BoostManagedSharedMemSend::BoostManagedSharedMemSend() : shm(nullptr), mutex(nullptr)
 {
+	mutex = new named_mutex(open_or_create, "named_mutex");
 }
 
 BoostManagedSharedMemSend::~BoostManagedSharedMemSend()
 {
 	delete shm;
 	shm = nullptr;
+	delete mutex;
+	mutex = nullptr;
 }
 
 bool BoostManagedSharedMemSend::create()
@@ -53,6 +57,8 @@ bool BoostManagedSharedMemSend::send(string message)
 	// receive側で読まれると同時に消される想定なのでチェックはしない
 
 	try {
+		mutex->lock();
+
 		// string型のまま書き込もうとするとなぜかうまくいかないので
 		// char型配列に変換して読み書きする
 		// デストラクタの中でいろいろやるような複雑なクラスのオブジェクトは
@@ -66,6 +72,8 @@ bool BoostManagedSharedMemSend::send(string message)
 			("MyString")			// オブジェクトの固有名
 			[message.length()]		// (配列の場合)要素数
 			(&array[0]);			// 値
+
+			mutex->unlock();
 
 		ret = true;
 	}
@@ -83,6 +91,8 @@ string BoostManagedSharedMemSend::receive()
 
 bool BoostManagedSharedMemSend::destroy()
 {
+	named_mutex::remove("named_mutex");
+
 	// managed_shared_memoryもshared_memory_object::remove()で消せる
 	return shared_memory_object::remove("MY_MANAGED_SHARED_MEMORY");
 }

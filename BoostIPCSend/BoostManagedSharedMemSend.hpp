@@ -12,6 +12,12 @@ static const std::string shared_dir_path = argv_path.substr(0, argv_path.find_la
 // managed_shared_memory‚Í•ÊƒNƒ‰ƒX‚Ìtypedef‚È‚Ì‚Å‘O•ûéŒ¾‚Å‚«‚È‚¢
 #include <boost/interprocess/managed_shared_memory.hpp>
 
+namespace boost {
+	namespace interprocess {
+		class named_mutex;
+	}
+}
+
 class BoostManagedSharedMemSend : public IPC_IF
 {
 public:
@@ -29,5 +35,6 @@ public:
 
 private:
 	boost::interprocess::managed_shared_memory* shm;
+	boost::interprocess::named_mutex* mutex;
 };
 

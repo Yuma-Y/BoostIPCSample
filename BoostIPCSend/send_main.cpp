@@ -9,15 +9,15 @@ using namespace std;
 int main()
 {
 	IPC_IF* sender = nullptr;
-	sender = new BoostSharedMemSend;
-	// sender = new BoostManagedSharedMemSend;
+	// sender = new BoostSharedMemSend;
+	sender = new BoostManagedSharedMemSend;
 
 	const type_info& id = typeid(sender);
 
 	// 共有メモリなど、送信機構の作成は送信側が行うこととする
 	if (sender->create()) {
 		cout << "=== Sender Process ===" << endl;
-		cout << "=== IPC class : " << sender->getClassName() << "===" << endl;
+		cout << "=== IPC class : " << sender->getClassName() << " ===" << endl;
 
 		// 標準入力から入った文言を送る。q/Q/quitで終了。
 		string message;
