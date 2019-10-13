@@ -5,6 +5,7 @@
 namespace boost {
 	namespace interprocess {
 		class file_mapping;
+		class file_lock;
 	}
 }
 
@@ -25,5 +26,6 @@ public:
 
 private:
 	boost::interprocess::file_mapping* file_map;
+	boost::interprocess::file_lock* lock;
 };
 

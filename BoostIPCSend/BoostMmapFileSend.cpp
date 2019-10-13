@@ -6,6 +6,7 @@
 #include <boost/interprocess/exceptions.hpp>
 #include <boost/interprocess/file_mapping.hpp>
 #include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/sync/file_lock.hpp>
 
 using namespace std;
 using namespace boost::interprocess;
@@ -15,7 +16,7 @@ static const std::string mapped_file_path = argv_path.substr(0, argv_path.find_l
 
 static const int file_size = 10000;
 
-BoostMmapFileSend::BoostMmapFileSend() : file_map(nullptr)
+BoostMmapFileSend::BoostMmapFileSend() : file_map(nullptr), lock(nullptr)
 {
 }
 
@@ -23,6 +24,8 @@ BoostMmapFileSend::~BoostMmapFileSend()
 {
 	delete file_map;
 	file_map = nullptr;
+	delete lock;
+	lock = nullptr;
 }
 
 bool BoostMmapFileSend::create()
@@ -42,6 +45,8 @@ bool BoostMmapFileSend::create()
 		// 必ず先にマッピングするファイルを作る or 存在していることを確認してからマッピングすること。
 		// ファイルが存在しない場合、interprocess_exceptionのnot_found_error(=7)となる。
 		file_map = new file_mapping(mapped_file_path.c_str(), read_write);
+
+		lock = new file_lock(mapped_file_path.c_str());
 
 		ret = true;
 	}
@@ -63,6 +68,8 @@ bool BoostMmapFileSend::send(string message)
 	bool ret = false;
 
 	try {
+		lock->lock();
+
 		// ファイルマッピングしたら、それをさらにmapped_regionに渡すことでアドレスを取得し、読み書きできるようになる。
 		// ちなみにmapped_region自体は共有メモリと同様に使える。
 		// またデフォルトだとファイルの先頭から領域すべてをプロセスにマッピングするが、
@@ -84,6 +91,8 @@ bool BoostMmapFileSend::send(string message)
 		// mapped_regionに書き込んだだけだとプロセスにマッピングしたメモリに書いただけなので、
 		// これをflush()してファイルに書き込む必要がある。（おそらく共有メモリも本当はやるべき）
 		region.flush();
+
+		lock->unlock();
 
 		ret = true;
 	}

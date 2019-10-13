@@ -4,6 +4,7 @@
 #include <boost/interprocess/exceptions.hpp>
 #include <boost/interprocess/file_mapping.hpp>
 #include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/sync/file_lock.hpp>
 
 using namespace std;
 using namespace boost::interprocess;
@@ -13,7 +14,7 @@ static const std::string mapped_file_path = argv_path.substr(0, argv_path.find_l
 
 static const int file_size = 10000;
 
-BoostMmapFileReceive::BoostMmapFileReceive() : file_map(nullptr)
+BoostMmapFileReceive::BoostMmapFileReceive() : file_map(nullptr), lock(nullptr)
 {
 }
 
@@ -21,6 +22,8 @@ BoostMmapFileReceive::~BoostMmapFileReceive()
 {
 	delete file_map;
 	file_map = nullptr;
+	delete lock;
+	lock = nullptr;
 }
 
 bool BoostMmapFileReceive::create()
@@ -38,6 +41,8 @@ string BoostMmapFileReceive::receive()
 	string ret = "";
 
 	try {
+		lock->lock();
+
 		mapped_region region(*file_map, read_write);
 		void* addr = region.get_address();
 
@@ -50,6 +55,8 @@ string BoostMmapFileReceive::receive()
 		// 読み終わったら中身をクリアする
 		std::size_t size = region.get_size();
 		std::memset(addr, '\0', size);
+
+		lock->unlock();
 	}
 	catch (interprocess_exception & e) {
 		cout << __FILE__ << "(" << __LINE__ << "):" << e.get_error_code() << "," << e.what() << endl;
@@ -70,7 +77,10 @@ bool BoostMmapFileReceive::hasNewMessage()
 	try {
 		if (file_map == nullptr) {
 			file_map = new file_mapping(mapped_file_path.c_str(), read_write);
+			lock = new file_lock(mapped_file_path.c_str());
 		}
+
+		lock->lock();
 
 		mapped_region region(*file_map, read_only);
 		void* addr = region.get_address();
@@ -79,6 +89,8 @@ bool BoostMmapFileReceive::hasNewMessage()
 		if (*ch != '\0') {
 			ret = true;
 		}
+
+		lock->unlock();
 	}
 	catch (interprocess_exception & e) {
 		cout << __FILE__ << "(" << __LINE__ << "):" << e.get_error_code() << "," << e.what() << endl;
