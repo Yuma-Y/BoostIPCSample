@@ -62,7 +62,7 @@ string BoostManagedSharedMemReceive::receive()
 		mutex->unlock();
 	}
 	catch (interprocess_exception& e) {
-		cout << e.get_error_code() << "," << e.what() << endl;
+		cout << __FILE__ << "(" << __LINE__ << "):" << e.get_error_code() << "," << e.what() << endl;
 	}
 
 	return ret;
@@ -101,7 +101,7 @@ bool BoostManagedSharedMemReceive::hasNewMessage()
 			mutex->unlock();
 		}
 		catch (interprocess_exception& e) {
-			cout << e.get_error_code() << "," << e.what() << endl;
+			cout << __FILE__ << "(" << __LINE__ << "):" << e.get_error_code() << "," << e.what() << endl;
 		}
 	}
 

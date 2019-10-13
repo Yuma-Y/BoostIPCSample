@@ -157,11 +157,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BoostManagedSharedMemReceive.cpp" />
+    <ClCompile Include="BoostMmapFileReceive.cpp" />
     <ClCompile Include="BoostSharedMemReceive.cpp" />
     <ClCompile Include="recv_main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BoostManagedSharedMemReceive.hpp" />
+    <ClInclude Include="BoostMmapFileReceive.hpp" />
     <ClInclude Include="BoostSharedMemReceive.hpp" />
     <ClInclude Include="IPC_IF.hpp" />
   </ItemGroup>

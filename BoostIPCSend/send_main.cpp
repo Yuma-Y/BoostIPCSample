@@ -3,6 +3,7 @@
 
 #include "BoostSharedMemSend.hpp"
 #include "BoostManagedSharedMemSend.hpp"
+#include "BoostMmapFileSend.hpp"
 
 using namespace std;
 
@@ -10,9 +11,8 @@ int main()
 {
 	IPC_IF* sender = nullptr;
 	// sender = new BoostSharedMemSend;
-	sender = new BoostManagedSharedMemSend;
-
-	const type_info& id = typeid(sender);
+	// sender = new BoostManagedSharedMemSend;
+	sender = new BoostMmapFileSend;
 
 	// 共有メモリなど、送信機構の作成は送信側が行うこととする
 	if (sender->create()) {
@@ -37,10 +37,6 @@ int main()
 			if ((message == "q") || (message == "Q") || (message == "quit")) {
 				break;
 			}
-
-			// @TODO : send側が終了したらreceive側も終了するようにしたいが、
-			// 現状send側がquitを書き込むとその時点で終了して共有メモリを削除してしまうためreceive側がそれを読めない。
-			// send側が書き込む→receive側が読む→receive側終了→send側終了となるようにする。
 		}
 	}
 
