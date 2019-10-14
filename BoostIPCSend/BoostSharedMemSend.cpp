@@ -14,21 +14,25 @@ static const std::string shared_dir_path = argv_path.substr(0, argv_path.find_la
 #include <boost/interprocess/exceptions.hpp>
 
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <boost/interprocess/sync/interprocess_condition.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
 
 using namespace std;
 using namespace boost::interprocess;
 
-BoostSharedMemSend::BoostSharedMemSend() : shm(nullptr)
+// 共有メモリに読み書きする内容
+typedef struct {
+	boost::interprocess::interprocess_mutex mutex;
+	boost::interprocess::interprocess_condition condition;
+	string message;
+} IPCData;
+
+BoostSharedMemSend::BoostSharedMemSend()
 {
-	mutex = new interprocess_mutex;
 }
 
 BoostSharedMemSend::~BoostSharedMemSend()
 {
-	delete shm;
-	shm = nullptr;
-	delete mutex;
-	mutex = nullptr;
 }
 
 bool BoostSharedMemSend::create()
@@ -36,8 +40,8 @@ bool BoostSharedMemSend::create()
 	bool ret = false;
 
 	try {
-		shm = new shared_memory_object(open_or_create, "MY_SHARED_MEMORY", read_write);
-		shm->truncate(1024);	// 作った直後は0KBのまま。ここで1KB以上のサイズにしないと、後でmapped_regionでexceptionが発生する
+		shared_memory_object shm(open_or_create, "MY_SHARED_MEMORY", read_write);
+		shm.truncate(1024);	// 作った直後は0KBのまま。ここで1KB以上のサイズにしないと、後でmapped_regionでexceptionが発生する
 
 		ret = true;
 	}
@@ -61,21 +65,27 @@ bool BoostSharedMemSend::send(string message)
 	bool ret = false;
 
 	try {
-		mutex->lock();
-
 		// mapped_regionでshared_memory_objectを自プロセスにマッピングし、
 		// このように直接読み書きできるようになる
-		mapped_region region(*shm, read_write);
-		char* mem = static_cast<char*>(region.get_address());
-		for (std::size_t i = 0; i < message.length(); ++i, ++mem) {
-			*mem = message[i];
-		}
+		shared_memory_object shm(open_only, "MY_SHARED_MEMORY", read_write);
+		mapped_region region(shm, read_write);
+		void* addr = region.get_address();
+		
+		// こう書くと、addrを基準に(=共有メモリ内に)オブジェクトを作成できるようだ。
+		IPCData* data = new (addr) IPCData;
 
 		// mutexの場合、unlock()し忘れるとlock()以降のセクションにアクセスできなくなる
 		// ちなみに、scoped_lockを使えばmutexをメンバ変数にしなくても
 		// ローカル変数のスコープの間だけロックし、スコープを抜けると自動でアンロックしてくれる。
-		mutex->unlock();
-		
+		// (scoped_lock<mutexの型>　変数を宣言した時点でロックされる）
+		scoped_lock<interprocess_mutex> lock(data->mutex);
+		data->message = message;
+
+		// 条件変数でwaitする。
+		// これで、他のプロセスからnotifyで解除されるまでこのプロセスの実行は止まる。
+		// interprocess_consitionはscoped_lock<interprocess_mutex>型を渡してwaitする。
+		data->condition.wait(lock);
+
 		ret = true;
 	}
 	catch (interprocess_exception& e) {

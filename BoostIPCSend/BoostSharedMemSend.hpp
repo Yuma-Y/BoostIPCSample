@@ -2,13 +2,6 @@
 
 #include "IPC_IF.hpp"
 
-namespace boost {
-	namespace interprocess {
-		class shared_memory_object;
-		class interprocess_mutex;
-	}
-}
-
 class BoostSharedMemSend : public IPC_IF
 {
 public:
@@ -23,9 +16,5 @@ public:
 	bool hasNewMessage();
 
 	string getClassName();
-
-private:
-	boost::interprocess::shared_memory_object* shm;
-	boost::interprocess::interprocess_mutex* mutex;
 };
 

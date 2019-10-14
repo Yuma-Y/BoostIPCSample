@@ -16,19 +16,25 @@ static const std::string shared_dir_path = argv_path.substr(0, argv_path.find_la
 #include <boost/filesystem.hpp>
 
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <boost/interprocess/sync/interprocess_condition.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
 
 using namespace std;
 using namespace boost::interprocess;
 
+// 共有メモリに読み書きする内容
+typedef struct {
+	boost::interprocess::interprocess_mutex mutex;
+	boost::interprocess::interprocess_condition condition;
+	string message;
+} IPCData;
+
 BoostSharedMemReceive::BoostSharedMemReceive()
 {
-	mutex = new interprocess_mutex;
 }
 
 BoostSharedMemReceive::~BoostSharedMemReceive()
 {
-	delete mutex;
-	mutex = nullptr;
 }
 
 bool BoostSharedMemReceive::create()
@@ -46,22 +52,25 @@ string BoostSharedMemReceive::receive()
 	string ret;
 
 	try {
-		mutex->lock();
-
 		shared_memory_object shm(open_only, "MY_SHARED_MEMORY", read_write);
 
 		mapped_region region(shm, read_write);
-		char* mem = static_cast<char*>(region.get_address());
-		for (std::size_t i = 0; i < region.get_size(); ++i, ++mem) {
-			if (*mem != '\0') {
-				ret.push_back(*mem);
-			}
-		}
+		void* addr = region.get_address();
+		IPCData* data = static_cast<IPCData*>(addr);
+
+		scoped_lock<interprocess_mutex> lock(data->mutex);
+		ret = data->message;
+		// notifyで条件変数を解除する。
+		// これで、wait()したプロセスが動き始める。
+		// notify_one()以外にも、waitしている他のプロセス全てに通知するnotify_all()もある。
+		data->condition.notify_one();
 
 		// 読んだ後メモリの内容をクリアする
-		std::memset(region.get_address(), 0, region.get_size());
+		// std::memset(region.get_address(), 0, region.get_size());
 
-		mutex->unlock();
+		// ちなみに、条件変数を使うと、メモリごとクリアすると正しく解除できなくなってしまう。
+		// そのため、messageのみクリアする。
+		data->message.clear();
 	}
 	catch (interprocess_exception& e) {
 		cout << __FILE__ << "(" << __LINE__ << "):" << e.get_error_code() << "," << e.what() << endl;
@@ -89,8 +98,10 @@ bool BoostSharedMemReceive::hasNewMessage()
 			shared_memory_object shm(open_only, "MY_SHARED_MEMORY", read_only);
 
 			mapped_region region(shm, read_only);
-			char* mem = static_cast<char*>(region.get_address());
-			if (*mem != '\0') {
+			void* addr = region.get_address();
+
+			IPCData* data = static_cast<IPCData*>(addr);
+			if (!data->message.empty()) {
 				ret = true;
 			}
 		}
