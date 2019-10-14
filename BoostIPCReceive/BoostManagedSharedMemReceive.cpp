@@ -10,20 +10,36 @@ static const std::string shared_dir_path = argv_path.substr(0, argv_path.find_la
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/interprocess/sync/named_mutex.hpp>
+#include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/exceptions.hpp>
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 
 using namespace std;
 using namespace boost::interprocess;
 
-BoostManagedSharedMemReceive::BoostManagedSharedMemReceive() : mutex(nullptr)
+// 共有メモリに読み書きする内容
+typedef struct _IPCData {
+	boost::interprocess::interprocess_semaphore write_semaphore;
+	boost::interprocess::interprocess_semaphore read_semaphore;
+	string message;
+
+public:
+	// interprocess_semaphoreはコンストラクタ引数でinitial_countを指定する。
+	// なおセマフォはwaitでカウンタをデクリメント、postでインクリメントし、
+	// ・内部のカウンタが0以下の状態のときにwait()すると、そのプロセスの実行が止まる。
+	// ・post()してカウンタが0以上になると、止まっていたプロセスの実行が再開される。
+
+	// initial_countが0だと最初にwriteする時点で止まってしまうので、1にしておく。
+	_IPCData() : write_semaphore(1), read_semaphore(1), message() {}
+	~_IPCData() {}
+} IPCData;
+
+BoostManagedSharedMemReceive::BoostManagedSharedMemReceive()
 {
-	mutex = new named_mutex(open_or_create, "named_mutex");
 }
 
 BoostManagedSharedMemReceive::~BoostManagedSharedMemReceive()
 {
-	delete mutex;
-	mutex = nullptr;
 }
 
 bool BoostManagedSharedMemReceive::create()
@@ -41,13 +57,8 @@ string BoostManagedSharedMemReceive::receive()
 	string ret;
 
 	try {
-		// interprocessのmutexには単純なlock以外にも
-		// lockの結果がわかるtry_lock,
-		// 設定した時間経過でロック解除されるtimed_lockがある。
-		mutex->lock();
-
 		managed_shared_memory shm(open_only, "MY_MANAGED_SHARED_MEMORY");
-
+		/*
 		typedef pair<char*, managed_shared_memory::size_type> MyType;
 		MyType res = shm.find<char>("MyString");
 		if (res.second != 0) {
@@ -58,8 +69,17 @@ string BoostManagedSharedMemReceive::receive()
 			// 読んだ後メモリの内容をクリアする
 			shm.destroy<char>("MyString");
 		}
+		*/
+		typedef pair<IPCData*, managed_shared_memory::size_type> MyType;
+		MyType res = shm.find<IPCData>("MyData");
 
-		mutex->unlock();
+		IPCData* data = res.first;
+		
+		data->read_semaphore.post();
+		ret = data->message;
+
+		// 読んだ後メモリの内容をクリアする
+		data->message.clear();
 	}
 	catch (interprocess_exception& e) {
 		cout << __FILE__ << "(" << __LINE__ << "):" << e.get_error_code() << "," << e.what() << endl;
@@ -84,21 +104,18 @@ bool BoostManagedSharedMemReceive::hasNewMessage()
 	const bool result = boost::filesystem::exists(path, error);
 	if (result && !error) {
 		try {
-			mutex->lock();
-
 			managed_shared_memory shm(open_only, "MY_MANAGED_SHARED_MEMORY");
 			// managed_shared_memoryの場合、このように
 			// find<取りたい型>(オブジェクト名)を呼ぶことで
 			// std::pair<取りたい型のポインタ, managed_shared_memory::size_type>が返ってくる。
 			// 2要素目のsize_typeには書き込まれた要素数が入る。
 			// constructで書き込むオブジェクトには配列も渡せるので、要素数のチェックもできる。
-			pair<char*, managed_shared_memory::size_type> res = shm.find<char>("MyString");
+			typedef pair<IPCData*, managed_shared_memory::size_type> MyType;
+			MyType res = shm.find<IPCData>("MyData");
 
-			if (res.second != 0) {
+			if ((res.second != 0) && (!res.first->message.empty())) {
 				ret = true;
 			}
-
-			mutex->unlock();
 		}
 		catch (interprocess_exception& e) {
 			cout << __FILE__ << "(" << __LINE__ << "):" << e.get_error_code() << "," << e.what() << endl;

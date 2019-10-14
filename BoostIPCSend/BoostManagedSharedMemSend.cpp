@@ -1,26 +1,45 @@
 #include "BoostManagedSharedMemSend.hpp"
 
+#ifndef BOOST_INTERPROCESS_SHARED_DIR_PATH
+static const std::string argv_path(__argv[0]);
+static const std::string shared_dir_path = argv_path.substr(0, argv_path.find_last_of("\\"));
+
+#define BOOST_INTERPROCESS_SHARED_DIR_PATH shared_dir_path
+#endif
+
 #include <iostream>
 #include <cstring>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/exceptions.hpp>
-#include <boost/interprocess/sync/named_mutex.hpp>
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 
 using namespace std;
 using namespace boost::interprocess;
 
-BoostManagedSharedMemSend::BoostManagedSharedMemSend() : shm(nullptr), mutex(nullptr)
+// 共有メモリに読み書きする内容
+typedef struct _IPCData {
+	boost::interprocess::interprocess_semaphore write_semaphore;
+	boost::interprocess::interprocess_semaphore read_semaphore;
+	string message;
+
+public:
+	// interprocess_semaphoreはコンストラクタ引数でinitial_countを指定する。
+	// なおセマフォはwaitでカウンタをデクリメント、postでインクリメントし、
+	// ・内部のカウンタが0以下の状態のときにwait()すると、そのプロセスの実行が止まる。
+	// ・post()してカウンタが0以上になると、止まっていたプロセスの実行が再開される。
+
+	// initial_countが0だと最初にwriteする時点で止まってしまうので、1にしておく。
+	_IPCData() : write_semaphore(1), read_semaphore(1), message(){}
+	~_IPCData(){}
+} IPCData;
+
+BoostManagedSharedMemSend::BoostManagedSharedMemSend()
 {
-	mutex = new named_mutex(open_or_create, "named_mutex");
 }
 
 BoostManagedSharedMemSend::~BoostManagedSharedMemSend()
 {
-	delete shm;
-	shm = nullptr;
-	delete mutex;
-	mutex = nullptr;
 }
 
 bool BoostManagedSharedMemSend::create()
@@ -28,7 +47,7 @@ bool BoostManagedSharedMemSend::create()
 	bool ret = false;
 
 	try {
-		shm = new managed_shared_memory(open_or_create, "MY_MANAGED_SHARED_MEMORY", 1024);
+		managed_shared_memory shm(open_or_create, "MY_MANAGED_SHARED_MEMORY", 1024);
 
 		ret = true;
 	}
@@ -57,23 +76,32 @@ bool BoostManagedSharedMemSend::send(string message)
 	// receive側で読まれると同時に消される想定なのでチェックはしない
 
 	try {
-		mutex->lock();
-
 		// string型のまま書き込もうとするとなぜかうまくいかないので
 		// char型配列に変換して読み書きする
 		// デストラクタの中でいろいろやるような複雑なクラスのオブジェクトは
 		// 送らないほうがよさそう。
-		char array[1024] = "\0";
-		std::memcpy(array, message.c_str(), message.length());
+		/* char array[1024] = "\0";
+		std::memcpy(array, message.c_str(), message.length()); */
 
 		// このように、construct_itを使うと配列そのものを渡すこともできる
 		// constructなら配列でなくてもOK
-		char* instance = shm->construct_it<char>
+		/* char* instance = shm->construct_it<char>
 			("MyString")			// オブジェクトの固有名
 			[message.length()]		// (配列の場合)要素数
 			(&array[0]);			// 値
+		*/
 
-			mutex->unlock();
+		// managed_shared_memory.find_or_construct()で１つのオブジェクトを使いまわすこともできる。
+		managed_shared_memory shm(open_only, "MY_MANAGED_SHARED_MEMORY");
+		IPCData* data = shm.find_or_construct<IPCData>("MyData")();
+
+		// セマフォもmutex同様、特定セクションへのアクセスを制御する排他制御に使う。
+		// wait()でセマフォをロックする。
+		data->write_semaphore.wait();
+		data->read_semaphore.wait();
+		data->message = message;
+
+		data->write_semaphore.post();
 
 		ret = true;
 	}
@@ -91,7 +119,16 @@ string BoostManagedSharedMemSend::receive()
 
 bool BoostManagedSharedMemSend::destroy()
 {
-	named_mutex::remove("named_mutex");
+	// named_mutex::remove("named_mutex");
+
+	// 共有メモリを削除する前に、wait()する。
+	// receive側でpost()されれば以降の処理へ進める。
+	// これで、receive側がquitメッセージを読む前にsend側が共有メモリを削除してしまうのを防げる。
+	managed_shared_memory shm(open_only, "MY_MANAGED_SHARED_MEMORY");
+	typedef pair<IPCData*, managed_shared_memory::size_type> MyType;
+	MyType res = shm.find<IPCData>("MyData");
+	IPCData* data = res.first;
+	data->read_semaphore.wait();
 
 	// managed_shared_memoryもshared_memory_object::remove()で消せる
 	return shared_memory_object::remove("MY_MANAGED_SHARED_MEMORY");

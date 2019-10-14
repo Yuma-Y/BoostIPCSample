@@ -78,6 +78,9 @@ bool BoostSharedMemSend::send(string message)
 		// ちなみに、scoped_lockを使えばmutexをメンバ変数にしなくても
 		// ローカル変数のスコープの間だけロックし、スコープを抜けると自動でアンロックしてくれる。
 		// (scoped_lock<mutexの型>　変数を宣言した時点でロックされる）
+		// interprocessのmutexには単純なlock以外にも
+		// lockの結果がわかるtry_lock,
+		// 設定した時間経過でロック解除されるtimed_lockがある。
 		scoped_lock<interprocess_mutex> lock(data->mutex);
 		data->message = message;
 

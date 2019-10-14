@@ -2,12 +2,6 @@
 
 #include "IPC_IF.hpp"
 
-namespace boost {
-	namespace interprocess {
-		class named_mutex;
-	}
-}
-
 class BoostManagedSharedMemReceive : public IPC_IF
 {
 public:
@@ -22,8 +16,5 @@ public:
 	bool hasNewMessage();
 
 	string getClassName();
-
-private:
-	boost::interprocess::named_mutex* mutex;
 };
 

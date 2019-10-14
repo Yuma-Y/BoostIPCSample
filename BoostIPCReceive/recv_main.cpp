@@ -11,8 +11,8 @@ using namespace std;
 int main()
 {
 	IPC_IF* receiver = nullptr;
-	receiver = new BoostSharedMemReceive;
-	// receiver = new BoostManagedSharedMemReceive;
+	// receiver = new BoostSharedMemReceive;
+	receiver = new BoostManagedSharedMemReceive;
 	// receiver = new BoostMmapFileReceive;
 
 	cout << "=== Receiver Process ===" << endl;
