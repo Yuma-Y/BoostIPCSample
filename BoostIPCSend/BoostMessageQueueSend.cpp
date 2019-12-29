@@ -91,6 +91,7 @@ bool BoostMessageQueueSend::destroy()
 	named_semaphore sem(open_only, "semaphore");
 	sem.wait();
 
+	named_semaphore::remove("semaphore");
 	return message_queue::remove("message_queue");
 }
 
