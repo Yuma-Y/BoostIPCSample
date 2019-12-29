@@ -5,6 +5,7 @@
 #include "BoostSharedMemReceive.hpp"
 #include "BoostManagedSharedMemReceive.hpp"
 #include "BoostMmapFileReceive.hpp"
+#include "BoostMessageQueueReceive.hpp"
 
 using namespace std;
 
@@ -12,8 +13,9 @@ int main()
 {
 	IPC_IF* receiver = nullptr;
 	// receiver = new BoostSharedMemReceive;
-	receiver = new BoostManagedSharedMemReceive;
+	// receiver = new BoostManagedSharedMemReceive;
 	// receiver = new BoostMmapFileReceive;
+	receiver = new BoostMessageQueueReceive;
 
 	cout << "=== Receiver Process ===" << endl;
 	cout << "=== IPC class : " << receiver->getClassName() << " ===" << endl;

@@ -4,6 +4,7 @@
 #include "BoostSharedMemSend.hpp"
 #include "BoostManagedSharedMemSend.hpp"
 #include "BoostMmapFileSend.hpp"
+#include "BoostMessageQueueSend.hpp"
 
 using namespace std;
 
@@ -11,8 +12,9 @@ int main()
 {
 	IPC_IF* sender = nullptr;
 	// sender = new BoostSharedMemSend;
-	sender = new BoostManagedSharedMemSend;
+	// sender = new BoostManagedSharedMemSend;
 	// sender = new BoostMmapFileSend;
+	sender = new BoostMessageQueueSend;
 
 	// 共有メモリなど、送信機構の作成は送信側が行うこととする
 	if (sender->create()) {
