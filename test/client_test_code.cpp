@@ -9,10 +9,10 @@
 #include <string>
 #include "BoostIPC_IF.hpp"
 
-class IPCTest : public ::testing::Test {
+class IPCTest1 : public ::testing::Test {
 protected:
 	static void SetUpTestSuite() {
-		ipc_if = new BoostIPC_IF<int>;
+		ipc_if = new BoostIPC_IF;
 	}
 
 	static void TearDownTestSuite() {
@@ -20,30 +20,46 @@ protected:
 		delete ipc_if;
 	}
 
-	static BoostIPC_IF<int> *ipc_if;
+	static BoostIPC_IF *ipc_if;
 };
 
-BoostIPC_IF<int>* IPCTest::ipc_if = NULL;
+BoostIPC_IF* IPCTest1::ipc_if = NULL;
 
-TEST_F(IPCTest, test_case_01){
+TEST_F(IPCTest1, test_case_01){
 	bool ret = false;
 	ret = ipc_if->init(CLIENT);
 	EXPECT_TRUE(ret);
 }
 
-TEST_F(IPCTest, test_case_02){
+TEST_F(IPCTest1, test_case_02){
 	bool ret = false;
-	ret = ipc_if->write(1000);
+	ret = ipc_if->write<int>(1000);
 	EXPECT_TRUE(ret);
 }
 
-TEST_F(IPCTest, test_case_03){
+TEST_F(IPCTest1, test_case_03){
 	bool ret = false;
 	int p;
-	ret = ipc_if->read(&p);
+	ret = ipc_if->read<int>(&p);
 	EXPECT_TRUE(ret);
 	printf("response from server  : %d\n", p);
 
 	EXPECT_EQ(p, 2000);
 }
 
+TEST_F(IPCTest1, test_case_04){
+	bool ret = false;
+	ret = ipc_if->write<std::string>("send");
+	EXPECT_TRUE(ret);
+}
+
+TEST_F(IPCTest1, test_case_05){
+	bool ret = false;
+
+	std::string str;
+	ret = ipc_if->read<std::string>(&str);
+	EXPECT_TRUE(ret);
+	printf("response from server  : %s\n", str.c_str());
+
+	EXPECT_EQ(str, "received");
+}

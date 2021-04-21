@@ -10,14 +10,19 @@
 #include <string>
 
 int main(int argc, char** argv) {
-	BoostIPC_IF<int> ipc_if;
+	BoostIPC_IF ipc_if;
 	if (ipc_if.init(SERVER)) {
 		std::cout << "=== IPC test server ===" << std::endl;
 
 		// サーバーは読んで書くだけ
 		int p;
-		if(ipc_if.read(&p)){
-			ipc_if.write(2000);
+		if(ipc_if.read<int>(&p)){
+			ipc_if.write<int>(2000);
+		}
+
+		std::string str;
+		if(ipc_if.read<std::string>(&str)){
+			ipc_if.write<std::string>("received");
 		}
 
 		std::cout << "=== IPC test server END ===" << std::endl;
